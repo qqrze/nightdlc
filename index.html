@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NightDLC — Твоя игровая реальность</title>
+  <style>
+    html,body{height:100%;margin:0;background:#1a0f2a;color:#fff;font-family:Inter,system-ui,Arial;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+    h1{font-size:3rem;color:#ff64ff;margin-bottom:10px}
+    h2{color:#ff64ff;margin:10px 0}
+    p{font-size:1.2rem;line-height:1.6;margin:5px 0;max-width:700px}
+    a{color:#ff64ff;font-weight:bold;text-decoration:none} 
+    a:hover{text-decoration:underline}
+    .avatar-container{position:relative;cursor:pointer;margin:30px 0}
+    #avatar{width:345px;height:334px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.6);transition:transform 600ms cubic-bezier(.2,.9,.2,1),opacity 400ms ease;transform-origin:center center}
+    .rotating{animation:spin 700ms linear}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .hidden{opacity:0;transform:scale(.2) translateY(-20px)}
+    canvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+    .links{margin-top:25px;font-size:1.2rem}
+  </style>
+</head>
+<body>
+  <h1>NightDLC</h1>
+  <h2>Твоя игровая реальность начинается здесь!</h2>
+  <p>NightDLC — это уникальное игровое сообщество для всех, кто ищет свободу, стиль и новые впечатления. Присоединяйся к нашему Telegram и Discord, чтобы быть в курсе всех событий, получать эксклюзивные новости и участвовать в активных мероприятиях!</p>
+  <p>Наши участники получают доступ к уникальному контенту, игровым ивентам, чату с профессиональными игроками и многому другому. NightDLC — это место, где каждый геймер чувствует себя частью чего-то большего.</p>
+
+  <div class="avatar-container">
+    <img id="avatar" src="https://media.discordapp.net/attachments/1434975919981854860/1436759807733530846/image.png?ex=6910c657&is=690f74d7&hm=119f97c66d95b295145d48522a537c1bbc8bccc74e04db5770bd310c41f16ee6&=&format=webp&quality=lossless&width=345&height=334" alt="NightDLC Avatar" draggable="false">
+    <canvas id="fx"></canvas>
+  </div>
+
+  <div class="links">
+    <p>Присоединяйся к нам в Telegram: <a href="https://t.me/nightdlc" target="_blank">t.me/nightdlc</a></p>
+    <p>Подключайся к нашему Discord: <a href="https://discord.gg/nightdlc" target="_blank">discord.gg/nightdlc</a></p>
+  </div>
+
+  <p>Не упусти шанс стать частью NightDLC! Играй, общайся и будь на шаг впереди всех!</p>
+
+  <script>
+    const img = document.getElementById('avatar');
+    const canvas = document.getElementById('fx');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let rafId = null;
+
+    function resizeCanvas(){
+      canvas.width = canvas.clientWidth * devicePixelRatio;
+      canvas.height = canvas.clientHeight * devicePixelRatio;
+      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function rand(min,max){return Math.random()*(max-min)+min}
+
+    function createParticles(x,y,count){
+      for(let i=0;i<count;i++){
+        const speed = rand(2,9);
+        const angle = rand(0,Math.PI*2);
+        particles.push({
+          x:x,y:y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+          life: rand(60,120), age:0, size: rand(2,9), opacity:1,
+          rotation: rand(0,Math.PI*2), vr: rand(-0.2,0.2),
+          color: `hsl(${Math.floor(rand(0,360))} ${rand(50,80)}% ${rand(40,60)}%)`
+        });
+      }
+    }
+
+    function step(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.vy += 0.15; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.vy *= 0.99; p.age++; p.opacity = 1 - p.age/p.life; p.rotation += p.vr;
+        ctx.save(); ctx.globalAlpha = Math.max(0,p.opacity); ctx.translate(p.x,p.y); ctx.rotate(p.rotation); ctx.fillStyle = p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); ctx.restore();
+        if(p.age >= p.life) particles.splice(i,1);
+      }
+      if(particles.length>0) rafId=requestAnimationFrame(step); else rafId=null;
+    }
+
+    function explode(){
+      const rect = img.getBoundingClientRect();
+      const stageRect = canvas.getBoundingClientRect();
+      const cx = (rect.left - stageRect.left) + rect.width/2;
+      const cy = (rect.top - stageRect.top) + rect.height/2;
+      createParticles(cx,cy,120);
+      if(!rafId) step();
+    }
+
+    img.addEventListener('click',()=>{
+      img.classList.remove('hidden');
+      img.classList.add('rotating');
+      setTimeout(()=>{img.classList.remove('rotating'); explode(); img.classList.add('hidden');},700);
+    });
+
+    img.addEventListener('dblclick',()=>{particles=[]; img.classList.remove('hidden'); if(rafId){cancelAnimationFrame(rafId); rafId=null;} ctx.clearRect(0,0,canvas.width,canvas.height);});
+  </script>
+</body>
+</html>
